@@ -1,272 +1,322 @@
 import streamlit as st
 import random
 
-cfg = dict(page_title='Lucky Spin Wheel', layout='centered')
-st.set_page_config(**cfg)
+st.set_page_config(page_title='Lucky Spin Wheel', layout='centered')
 
 st.markdown('''
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap");
-html, body, [data-testid="stAppViewContainer"] {
-    background: radial-gradient(ellipse at 60% 20%, #2d0057 0%, #1a0033 60%, #0d0020 100%);
-    min-height: 100vh;
+@import url("https://fonts.googleapis.com/css2?family=Bangers&display=swap");
+body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+    background: #f0e6d3 !important;
 }
-[data-testid="stAppViewContainer"] {
-    background: radial-gradient(ellipse at 60% 20%, #2d0057 0%, #1a0033 60%, #0d0020 100%) !important;
-}
-#MainMenu, footer, header { visibility: hidden; }
-[data-testid="stToolbar"] { display: none; }
-.spin-title {
-    font-family: "Bangers", cursive;
-    font-size: 3.2rem;
-    text-align: center;
-    letter-spacing: 4px;
-    color: #FFD700;
-    text-shadow: 0 0 20px #ff8c00aa, 3px 3px 0 #a0522d;
-    margin-bottom: 0.2rem;
-}
-.spin-subtitle {
-    font-family: "Nunito", sans-serif;
-    font-size: 1rem;
-    text-align: center;
-    color: #f5c97a;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-}
-.wheel-wrapper { position:relative; display:inline-block; }
-.wheel-wrapper::before {
-    content:"";
-    position:absolute; top:-14px; left:-14px;
-    width:calc(100% + 28px); height:calc(100% + 28px);
-    border-radius:50%;
-    background:repeating-conic-gradient(#FF8C00 0deg 7deg, #FFD700 7deg 14deg);
-    z-index:0;
-}
-.wheel-wrapper::after {
-    content:"";
-    position:absolute; top:-6px; left:-6px;
-    width:calc(100% + 12px); height:calc(100% + 12px);
-    border-radius:50%; background:#1a0033; z-index:1;
-}
-#wheelCanvas { position:relative; z-index:2; border-radius:50%; display:block; }
-.pointer { position:absolute; top:-28px; left:50%; transform:translateX(-50%); z-index:10; }
-.result-card {
-    background: linear-gradient(135deg, #3d0070 0%, #6a00b8 50%, #3d0070 100%);
-    border: 3px solid #FFD700; border-radius:16px; padding:1.2rem 2rem;
-    text-align:center; margin:1rem auto; max-width:380px;
-    box-shadow:0 0 30px #FFD70055; animation:resultPop 0.5s ease;
-}
-@keyframes resultPop { 0%{transform:scale(0.5);opacity:0;} 100%{transform:scale(1);opacity:1;} }
-.result-label { font-family:"Bangers",cursive; font-size:1rem; color:#f5c97a; letter-spacing:3px; }
-.result-prize { font-family:"Bangers",cursive; font-size:2.4rem; color:#FFD700; text-shadow:2px 2px 0 #a0522d; }
+#MainMenu, footer, header, [data-testid="stToolbar"] { visibility: hidden; }
 .stButton > button {
-    background: linear-gradient(135deg, #FF8C00, #FFD700, #FF8C00) !important;
-    color: #1a0033 !important; font-family:"Bangers",cursive !important;
-    font-size:1.6rem !important; letter-spacing:3px !important;
-    border:none !important; border-radius:50px !important;
-    padding:0.6rem 3rem !important; width:100% !important;
-    box-shadow:0 6px 20px #FF8C0066 !important;
+    background: linear-gradient(135deg, #FF8C00, #FFD700) !important;
+    color: #1a0033 !important;
+    font-family: "Bangers", cursive !important;
+    font-size: 1.8rem !important;
+    letter-spacing: 4px !important;
+    border: none !important;
+    border-radius: 50px !important;
+    padding: 0.5rem 4rem !important;
+    width: 100% !important;
+    box-shadow: 0 6px 20px #FF8C0066 !important;
+    margin-top: 1rem !important;
 }
-.stats-row { display:flex; gap:12px; justify-content:center; margin-top:1rem; flex-wrap:wrap; }
-.stat-chip {
-    background:rgba(255,215,0,0.12); border:1.5px solid rgba(255,215,0,0.35);
-    border-radius:20px; padding:4px 14px; font-family:"Nunito",sans-serif;
-    font-size:0.78rem; color:#f5c97a;
+.result-box {
+    text-align: center;
+    padding: 1rem 2rem;
+    border-radius: 16px;
+    margin: 1rem auto;
+    max-width: 400px;
+    font-family: "Bangers", cursive;
 }
-#confettiCanvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9999; }
 </style>
 ''', unsafe_allow_html=True)
 
+if 'angle' not in st.session_state:
+    st.session_state['angle'] = 0
+if 'result' not in st.session_state:
+    st.session_state['result'] = ''
+if 'spun' not in st.session_state:
+    st.session_state['spun'] = False
+
 SEGMENTS = [
-    {'label': 'Apple iPad',               'color': '#3B0764', 'tc': '#FFD700', 'prize': True},
-    {'label': 'Better Luck Next Time',    'color': '#F5E6C8', 'tc': '#3B0764', 'prize': False},
-    {'label': 'Spin Again',               'color': '#3B0764', 'tc': '#FFD700', 'prize': False},
-    {'label': 'Double Door Refrigerator', 'color': '#F5E6C8', 'tc': '#3B0764', 'prize': True},
-    {'label': 'Split Air Conditioner',    'color': '#3B0764', 'tc': '#FFD700', 'prize': True},
-    {'label': 'Better Luck Next Time',    'color': '#F5E6C8', 'tc': '#3B0764', 'prize': False},
-    {'label': 'Apple AirPods',            'color': '#3B0764', 'tc': '#FFFFFF', 'prize': True},
-    {'label': 'Spin Again',               'color': '#F5E6C8', 'tc': '#3B0764', 'prize': False},
+    {'label': 'APPLE IPAD',               'bg': '#4B0082', 'fg': '#FFD700'},
+    {'label': 'BETTER LUCK NEXT TIME',    'bg': '#F5E6C8', 'fg': '#4B0082'},
+    {'label': 'SPIN AGAIN',               'bg': '#4B0082', 'fg': '#FFD700'},
+    {'label': 'DOUBLE DOOR REFRIGERATOR', 'bg': '#F5E6C8', 'fg': '#4B0082'},
+    {'label': 'SPLIT AIR CONDITIONER',    'bg': '#4B0082', 'fg': '#FFD700'},
+    {'label': 'BETTER LUCK NEXT TIME',    'bg': '#F5E6C8', 'fg': '#4B0082'},
+    {'label': 'APPLE AIRPODS',            'bg': '#4B0082', 'fg': '#FFFFFF'},
+    {'label': 'SPIN AGAIN',               'bg': '#F5E6C8', 'fg': '#FF6600'},
 ]
 
-N = len(SEGMENTS)
-SLICE_DEG = 360.0 / N
+N = 8
+SLICE = 360.0 / N
 
-for key, val in [('rotation', 0.0), ('result_idx', None), ('spin_count', 0), ('prize_count', 0)]:
-    if key not in st.session_state:
-        st.session_state[key] = val
-
-st.markdown('<div class="spin-title">LUCKY SPIN WHEEL</div>', unsafe_allow_html=True)
-st.markdown('<div class="spin-subtitle">Spin and Win Exciting Prizes</div>', unsafe_allow_html=True)
-
-rot = st.session_state['rotation']
-ridx = st.session_state['result_idx']
-is_prize_js = 'true' if (ridx is not None and SEGMENTS[ridx]['prize']) else 'false'
-
-segs_js = '['
+segs_json = '['
 for i, s in enumerate(SEGMENTS):
     comma = ',' if i < N - 1 else ''
-    segs_js += '{"label":"' + s['label'] + '","color":"' + s['color'] + '","tc":"' + s['tc'] + '"}' + comma
-segs_js += ']'
+    segs_json += '{"label":"' + s['label'] + '","bg":"' + s['bg'] + '","fg":"' + s['fg'] + '"}' + comma
+segs_json += ']'
 
-html = (
-    '<div style="display:flex;justify-content:center;margin-bottom:1rem;">'
-    '<div class="wheel-wrapper">'
-    '<div class="pointer">'
-    '<svg width="46" height="52" viewBox="0 0 46 52" fill="none">'
-    '<polygon points="23,52 0,4 46,4" fill="#FFD700" stroke="#a0522d" stroke-width="2.5"/>'
-    '<polygon points="23,42 8,10 38,10" fill="#FF8C00"/>'
-    '</svg></div>'
-    '<canvas id="wheelCanvas" width="460" height="460"></canvas>'
-    '</div></div>'
-    '<canvas id="confettiCanvas"></canvas>'
-    '<script>'
-    '(function(){'
-    'var segs=' + segs_js + ';'
-    'var N=segs.length,sd=360/N;'
-    'var cv=document.getElementById("wheelCanvas"),ctx=cv.getContext("2d");'
-    'var cx=cv.width/2,cy=cv.height/2,r=cv.width/2-8;'
-    'var curRot=' + str(rot) + ';'
-    'var isPrize=' + is_prize_js + ';'
-    'function rad(d){return d*Math.PI/180;}'
-    'function draw(rot){'
-    'ctx.clearRect(0,0,cv.width,cv.height);'
-    'for(var i=0;i<N;i++){'
-    'var s=rad(rot+i*sd-90),e=rad(rot+(i+1)*sd-90);'
-    'ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();'
-    'ctx.fillStyle=segs[i].color;ctx.fill();'
-    'ctx.strokeStyle="#7c3aed";ctx.lineWidth=2.5;ctx.stroke();'
-    'ctx.save();ctx.translate(cx,cy);'
-    'ctx.rotate(rad(rot+i*sd+sd/2-90));'
-    'ctx.textAlign="right";ctx.fillStyle=segs[i].tc;'
-    'ctx.font="900 14px Bangers,cursive";'
-    'var words=segs[i].label.split(" ");'
-    'var h=Math.ceil(words.length/2);'
-    'var l1=words.slice(0,h).join(" "),l2=words.slice(h).join(" ");'
-    'var tr=r*0.78;'
-    'if(words.length<=2){ctx.fillText(segs[i].label,tr,5);}'
-    'else{ctx.fillText(l1,tr,-8);ctx.fillText(l2,tr,10);}'
-    'ctx.restore();'
-    '}'
-    'ctx.beginPath();ctx.arc(cx,cy,r+2,0,Math.PI*2);'
-    'ctx.strokeStyle="#FFD700";ctx.lineWidth=4;ctx.stroke();'
-    'ctx.beginPath();ctx.arc(cx,cy,42,0,Math.PI*2);'
-    'var g=ctx.createRadialGradient(cx,cy,5,cx,cy,42);'
-    'g.addColorStop(0,"#fff");g.addColorStop(0.5,"#f5e6c8");g.addColorStop(1,"#d4a96a");'
-    'ctx.fillStyle=g;ctx.fill();'
-    'ctx.strokeStyle="#FFD700";ctx.lineWidth=3;ctx.stroke();'
-    'ctx.font="bold 26px serif";ctx.fillStyle="#8B4513";ctx.textAlign="center";'
-    'ctx.fillText("S",cx,cy+9);'
-    '}'
-    'var anim=false;'
-    'function spin(target){'
-    'if(anim)return;anim=true;'
-    'var s0=curRot,d=target-s0,dur=4500,t0=performance.now();'
-    'function ease(t){return 1-Math.pow(1-t,4);}'
-    'function frame(now){'
-    'var t=Math.min((now-t0)/dur,1);'
-    'curRot=s0+d*ease(t);draw(curRot);'
-    'if(t<1){requestAnimationFrame(frame);}'
-    'else{anim=false;if(isPrize)confetti();}'
-    '}'
-    'requestAnimationFrame(frame);'
-    '}'
-    'draw(curRot);'
-    'var TARGET=' + str(rot) + ';'
-    'if(Math.abs(TARGET-curRot)>1)spin(TARGET);'
-    'function confetti(){'
-    'var cc=document.getElementById("confettiCanvas");'
-    'cc.width=window.innerWidth;cc.height=window.innerHeight;'
-    'var c=cc.getContext("2d");'
-    'var cols=["#FFD700","#FF8C00","#7c3aed","#fff","#ff4f94","#00e5ff"],ps=[];'
-    'for(var i=0;i<180;i++)ps.push({'
-    'x:Math.random()*cc.width,y:-20,'
-    'vx:(Math.random()-0.5)*6,vy:Math.random()*4+3,'
-    'r:Math.random()*8+4,col:cols[Math.floor(Math.random()*cols.length)],'
-    'rot:Math.random()*360,sp:(Math.random()-0.5)*8,'
-    'sh:Math.random()>0.5?"r":"c"'
-    '});'
-    'var fn=0;'
-    'function loop(){'
-    'c.clearRect(0,0,cc.width,cc.height);var alive=false;'
-    'ps.forEach(function(p){'
-    'p.x+=p.vx;p.y+=p.vy;p.rot+=p.sp;p.vy+=0.08;'
-    'if(p.y<cc.height+30)alive=true;'
-    'c.save();c.translate(p.x,p.y);c.rotate(p.rot*Math.PI/180);'
-    'c.fillStyle=p.col;'
-    'if(p.sh==="r")c.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.5);'
-    'else{c.beginPath();c.arc(0,0,p.r/2,0,Math.PI*2);c.fill();}'
-    'c.restore();'
-    '});'
-    'fn++;if(alive&&fn<300)requestAnimationFrame(loop);'
-    'else c.clearRect(0,0,cc.width,cc.height);'
-    '}'
-    'loop();'
-    '}'
-    '})();'
-    '</script>'
-)
+final_angle = st.session_state['angle']
+spun = st.session_state['spun']
 
-st.components.v1.html(html, height=520)
+html_code = '''
+<div style="display:flex;flex-direction:column;align-items:center;padding:10px 0;">
+  <div style="position:relative;width:480px;height:480px;">
+
+    <!-- Marigold outer ring -->
+    <canvas id="ringCanvas" width="480" height="480"
+      style="position:absolute;top:0;left:0;z-index:1;"></canvas>
+
+    <!-- Wheel -->
+    <canvas id="wheelCanvas" width="440" height="440"
+      style="position:absolute;top:20px;left:20px;z-index:2;border-radius:50%;"></canvas>
+
+    <!-- Pointer -->
+    <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:10;">
+      <svg width="40" height="55" viewBox="0 0 40 55">
+        <polygon points="20,55 0,5 40,5" fill="#FFD700" stroke="#a0522d" stroke-width="2"/>
+        <polygon points="20,45 6,10 34,10" fill="#FF8C00"/>
+        <circle cx="20" cy="8" r="5" fill="#FFD700" stroke="#a0522d" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+  <div id="resultBox" style="display:none;text-align:center;padding:1rem 2rem;border-radius:16px;
+    margin-top:1rem;max-width:400px;font-family:Bangers,cursive;font-size:1.8rem;
+    background:linear-gradient(135deg,#3d0070,#6a00b8);border:3px solid #FFD700;
+    color:#FFD700;box-shadow:0 0 30px #FFD70055;letter-spacing:2px;"></div>
+</div>
+
+<canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:9999;"></canvas>
+
+<script>
+(function() {
+  var SEGS = ''' + segs_json + ''';
+  var N = 8, SLICE = 360 / N;
+  var wc = document.getElementById('wheelCanvas');
+  var ctx = wc.getContext('2d');
+  var cx = wc.width / 2, cy = wc.height / 2, R = wc.width / 2 - 4;
+
+  // Draw marigold ring
+  var rc = document.getElementById('ringCanvas');
+  var rctx = rc.getContext('2d');
+  var rcx = rc.width/2, rcy = rc.height/2, outerR = 238, innerR = 218;
+  var flowerCount = 52;
+  for (var f = 0; f < flowerCount; f++) {
+    var ang = (f / flowerCount) * Math.PI * 2;
+    var fx = rcx + Math.cos(ang) * (outerR - 11);
+    var fy = rcy + Math.sin(ang) * (outerR - 11);
+    rctx.beginPath();
+    rctx.arc(fx, fy, 10, 0, Math.PI * 2);
+    rctx.fillStyle = (f % 2 === 0) ? '#FF8C00' : '#FFD700';
+    rctx.fill();
+    rctx.beginPath();
+    rctx.arc(fx, fy, 5, 0, Math.PI * 2);
+    rctx.fillStyle = '#8B2500';
+    rctx.fill();
+  }
+
+  function toRad(d) { return d * Math.PI / 180; }
+
+  function drawWheel(rot) {
+    ctx.clearRect(0, 0, wc.width, wc.height);
+    for (var i = 0; i < N; i++) {
+      var start = toRad(rot + i * SLICE - 90);
+      var end   = toRad(rot + (i + 1) * SLICE - 90);
+      var seg   = SEGS[i];
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, start, end);
+      ctx.closePath();
+      ctx.fillStyle = seg.bg;
+      ctx.fill();
+      ctx.strokeStyle = '#6B21A8';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(toRad(rot + i * SLICE + SLICE / 2 - 90));
+      ctx.textAlign = 'right';
+      ctx.fillStyle = seg.fg;
+
+      var words = seg.label.split(' ');
+      var lines = [];
+      if (words.length <= 2) {
+        lines = [seg.label];
+      } else if (words.length === 3) {
+        lines = [words[0], words[1] + ' ' + words[2]];
+      } else {
+        var half = Math.ceil(words.length / 2);
+        lines = [words.slice(0, half).join(' '), words.slice(half).join(' ')];
+      }
+
+      var fs = lines.length === 1 ? 17 : 14;
+      ctx.font = '900 ' + fs + 'px Bangers, cursive';
+      var tr = R * 0.76;
+      var lh = fs + 4;
+      var totalH = lines.length * lh;
+      for (var l = 0; l < lines.length; l++) {
+        ctx.fillText(lines[l], tr, -totalH / 2 + l * lh + lh * 0.75);
+      }
+      ctx.restore();
+    }
+
+    // Outer gold ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 1, 0, Math.PI * 2);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+    var cg = ctx.createRadialGradient(cx, cy, 4, cx, cy, 46);
+    cg.addColorStop(0, '#ffffff');
+    cg.addColorStop(0.45, '#f5e6c8');
+    cg.addColorStop(1, '#d4a96a');
+    ctx.fillStyle = cg;
+    ctx.fill();
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Inner ring dots on center
+    ctx.beginPath();
+    ctx.arc(cx, cy, 38, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(180,120,60,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Letter S in center
+    ctx.font = 'bold 32px Georgia, serif';
+    ctx.fillStyle = '#8B4513';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('S', cx, cy);
+  }
+
+  var curRot = ''' + str(final_angle) + ''';
+  drawWheel(curRot);
+
+  var TARGET_ANGLE = ''' + str(final_angle) + ''';
+  var SHOULD_SPIN = ''' + ('true' if spun else 'false') + ''';
+
+  if (SHOULD_SPIN) {
+    var startRot = curRot - (8 * 360 + (''' + str(final_angle) + ''' % 360));
+    // recalculate: animate from previous to final
+    var prevAngle = TARGET_ANGLE - (8 * 360);
+    if (prevAngle < 0) prevAngle = 0;
+    animateSpin(prevAngle, TARGET_ANGLE);
+  }
+
+  function animateSpin(from, to) {
+    var dur = 5000;
+    var t0 = performance.now();
+    function ease(t) { return 1 - Math.pow(1 - t, 4); }
+    function frame(now) {
+      var t = Math.min((now - t0) / dur, 1);
+      curRot = from + (to - from) * ease(t);
+      drawWheel(curRot);
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        drawWheel(to);
+        showResult();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showResult() {
+    var norm = ((TARGET_ANGLE % 360) + 360) % 360;
+    var landed = Math.floor(((360 - norm + 90) % 360) / (360 / N)) % N;
+    var seg = SEGS[landed];
+    var box = document.getElementById('resultBox');
+    box.style.display = 'block';
+    box.innerText = seg.label;
+    if (seg.label.indexOf('LUCK') !== -1) {
+      box.style.background = 'linear-gradient(135deg,#1f1f3a,#2d2d4e)';
+      box.style.borderColor = '#6b7280';
+      box.style.color = '#9ca3af';
+    } else if (seg.label.indexOf('SPIN') !== -1) {
+      box.style.background = 'linear-gradient(135deg,#2d0057,#4B0082)';
+      box.style.borderColor = '#a78bfa';
+      box.style.color = '#a78bfa';
+    } else {
+      box.style.background = 'linear-gradient(135deg,#3d0070,#6a00b8)';
+      box.style.borderColor = '#FFD700';
+      box.style.color = '#FFD700';
+      launchConfetti();
+    }
+  }
+
+  function launchConfetti() {
+    var cc = document.getElementById('confettiCanvas');
+    cc.width = window.innerWidth; cc.height = window.innerHeight;
+    var c = cc.getContext('2d');
+    var cols = ['#FFD700','#FF8C00','#7c3aed','#fff','#ff4f94','#00e5ff'];
+    var ps = [];
+    for (var i = 0; i < 200; i++) ps.push({
+      x: Math.random() * cc.width, y: -20,
+      vx: (Math.random() - 0.5) * 8, vy: Math.random() * 5 + 3,
+      r: Math.random() * 9 + 4,
+      col: cols[Math.floor(Math.random() * cols.length)],
+      rot: Math.random() * 360, sp: (Math.random() - 0.5) * 10,
+      sh: Math.random() > 0.5 ? 'r' : 'c'
+    });
+    var fn = 0;
+    function loop() {
+      c.clearRect(0, 0, cc.width, cc.height); var alive = false;
+      ps.forEach(function(p) {
+        p.x += p.vx; p.y += p.vy; p.rot += p.sp; p.vy += 0.1;
+        if (p.y < cc.height + 30) alive = true;
+        c.save(); c.translate(p.x, p.y); c.rotate(p.rot * Math.PI / 180);
+        c.fillStyle = p.col;
+        if (p.sh === 'r') c.fillRect(-p.r/2, -p.r/2, p.r, p.r * 0.5);
+        else { c.beginPath(); c.arc(0, 0, p.r/2, 0, Math.PI*2); c.fill(); }
+        c.restore();
+      });
+      fn++;
+      if (alive && fn < 400) requestAnimationFrame(loop);
+      else c.clearRect(0, 0, cc.width, cc.height);
+    }
+    loop();
+  }
+
+  if (!SHOULD_SPIN) {
+    var resultBox = document.getElementById('resultBox');
+    if (resultBox) resultBox.style.display = 'none';
+  }
+})();
+</script>
+'''
+
+st.components.v1.html(html_code, height=560)
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    spin_clicked = st.button('SPIN', use_container_width=True)
+    spin_btn = st.button('SPIN THE WHEEL', use_container_width=True)
 
-if spin_clicked:
-    weights = [0.08, 0.22, 0.15, 0.08, 0.08, 0.22, 0.08, 0.09]
+if spin_btn:
+    weights = [0.10, 0.20, 0.12, 0.10, 0.10, 0.20, 0.10, 0.08]
     idx = random.choices(range(N), weights=weights, k=1)[0]
-    extra = random.randint(6, 10) * 360
-    offset = -(idx * SLICE_DEG + SLICE_DEG / 2) + random.uniform(-SLICE_DEG * 0.35, SLICE_DEG * 0.35)
-    cur = st.session_state['rotation'] % 360
-    needed = (offset % 360 - cur) % 360
-    if needed < 45:
+    extra_spins = random.randint(7, 11) * 360
+    seg_center = -(idx * SLICE + SLICE / 2)
+    jitter = random.uniform(-SLICE * 0.3, SLICE * 0.3)
+    prev = st.session_state['angle']
+    cur_norm = prev % 360
+    target_norm = (seg_center + jitter) % 360
+    needed = (target_norm - cur_norm) % 360
+    if needed < 90:
         needed += 360
-    st.session_state['rotation'] = st.session_state['rotation'] + extra + needed
-    st.session_state['result_idx'] = idx
-    st.session_state['spin_count'] += 1
-    if SEGMENTS[idx]['prize']:
-        st.session_state['prize_count'] += 1
+    st.session_state['angle'] = prev + extra_spins + needed
+    st.session_state['result'] = SEGMENTS[idx]['label']
+    st.session_state['spun'] = True
     st.rerun()
-
-ridx = st.session_state['result_idx']
-if ridx is not None:
-    seg = SEGMENTS[ridx]
-    name = seg['label']
-    if seg['prize']:
-        st.markdown(
-            '<div class="result-card">'
-            '<div class="result-label">Congratulations! You Won</div>'
-            '<div class="result-prize">' + name + '</div>'
-            '</div>',
-            unsafe_allow_html=True
-        )
-    elif 'Spin' in name:
-        st.markdown(
-            '<div class="result-card" style="border-color:#a78bfa;">'
-            '<div class="result-label" style="color:#c4b5fd;">Your turn again!</div>'
-            '<div class="result-prize" style="color:#a78bfa;">SPIN AGAIN</div>'
-            '</div>',
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            '<div class="result-card" style="border-color:#6b7280;background:linear-gradient(135deg,#1f1f3a,#2d2d4e);">'
-            '<div class="result-label" style="color:#9ca3af;">Do not give up!</div>'
-            '<div class="result-prize" style="color:#9ca3af;">BETTER LUCK NEXT TIME</div>'
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-sc = st.session_state['spin_count']
-pc = st.session_state['prize_count']
-if sc > 0:
-    wr = int(pc / sc * 100)
-    st.markdown(
-        '<div class="stats-row">'
-        '<div class="stat-chip">Spins: ' + str(sc) + '</div>'
-        '<div class="stat-chip">Prizes Won: ' + str(pc) + '</div>'
-        '<div class="stat-chip">Win Rate: ' + str(wr) + '%</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
