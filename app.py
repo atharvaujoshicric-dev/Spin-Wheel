@@ -13,10 +13,10 @@ prizes = [
     {"label": "BETTER LUCK", "icon": "❌", "color": "#f5576c"}
 ]
 
-st.set_page_config(page_title="Executive Spin Wheel", layout="centered")
+st.set_page_config(page_title="Wheel Of Fortune", layout="centered")
 
 # Injecting clean UI style
-st.markdown("<h1 style='text-align: center; color: #1E1E1E;'>🎡 Corporate Prize Wheel</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #1E1E1E;'>🎡 Wheel Of Fortune</h1>", unsafe_allow_html=True)
 
 # The updated HTML/JS with SVG Icons and Text Alignment
 wheel_html = f"""
