@@ -2,116 +2,136 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-# Prize list based on your PDF design
+# Prize data from your design document
 prizes = [
-    "AIRPODS APPLE",
-    "BETTER LUCK NEXT TIME",
-    "SPIN AGAIN",
-    "IPAD APPLE",
-    "DOUBLE DOOR REFRIGERATOR",
-    "SPLIT AIR CONDITIONER",
-    "BETTER LUCK NEXT TIME"
+    "AIRPODS APPLE",            # [cite: 1]
+    "BETTER LUCK NEXT TIME",    # [cite: 2, 3]
+    "SPIN AGAIN",               # [cite: 4, 5]
+    "IPAD APPLE",               # [cite: 6]
+    "DOUBLE DOOR REFRIGERATOR", # [cite: 7, 8, 10]
+    "SPLIT AIR CONDITIONER",    # [cite: 9, 10]
+    "BETTER LUCK NEXT TIME"     # [cite: 11, 12]
 ]
 
-st.set_page_config(page_title="Prize Wheel", layout="centered")
+st.set_page_config(page_title="Premium Spin Wheel", layout="centered")
 
-# Using a standard st.title to avoid the markdown error
-st.title("🎁 Corporate Prize Draw")
+# Visual layout and CSS
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; }
+    .stTitle { color: white; text-align: center; font-family: 'Inter', sans-serif; }
+    </style>
+""", unsafe_allow_html=True)
 
-# Hex colors matching a premium look
-colors = ["#E74C3C", "#3498DB", "#2ECC71", "#F1C40F", "#9B59B6", "#E67E22", "#1ABC9C"]
+st.title("🎡 Executive Prize Draw")
 
-# The HTML/JS component
+# Premium Wheel HTML/JS
 wheel_html = f"""
-<div id="wrapper" style="display: flex; flex-direction: column; align-items: center; font-family: sans-serif;">
-    <div id="pointer" style="font-size: 40px; color: #ff0000; z-index: 10; margin-bottom: -30px;">▼</div>
-    <canvas id="wheel" width="500" height="500" style="border-radius: 50%; border: 5px solid #333; box-shadow: 0 10px 20px rgba(0,0,0,0.2);"></canvas>
-    <button id="spin-btn" style="margin-top: 20px; padding: 15px 40px; font-size: 20px; cursor: pointer; background: #2ecc71; color: white; border: none; border-radius: 5px; font-weight: bold;">SPIN WHEEL</button>
-    <h2 id="winner-text" style="margin-top: 20px; color: #2c3e50; min-height: 40px;"></h2>
+<div id="wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
+    <div id="pointer" style="
+        width: 0; height: 0; 
+        border-left: 20px solid transparent; 
+        border-right: 20px solid transparent; 
+        border-top: 30px solid #FF3E3E; 
+        z-index: 100; margin-bottom: -15px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    "></div>
+
+    <div id="wheel-container" style="position: relative; width: 500px; height: 500px;">
+        <svg id="wheel-svg" viewBox="0 0 500 500" style="width: 100%; height: 100%; transform: rotate(0deg); transition: transform 5s cubic-bezier(0.1, 0, 0, 1); shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <defs>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                    <feOffset dx="2" dy="2" />
+                    <feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
+                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+            <g id="wheel-group"></g>
+        </svg>
+        <circle cx="250" cy="250" r="25" fill="#222" stroke="#444" stroke-width="2" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" />
+    </div>
+
+    <button id="spin-button" style="
+        margin-top: 40px; padding: 15px 50px; 
+        font-size: 22px; font-weight: 800; letter-spacing: 1px;
+        background: linear-gradient(135deg, #6e8efb, #a777e3); 
+        color: white; border: none; border-radius: 50px; 
+        cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: 0.2s;
+    ">SPIN NOW</button>
+    
+    <h2 id="winner-display" style="color: #00ffcc; font-family: sans-serif; margin-top: 20px; height: 30px; text-transform: uppercase;"></h2>
 </div>
 
 <script>
 const prizes = {json.dumps(prizes)};
-const colors = {json.dumps(colors)};
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const centerX = 250;
-const centerY = 250;
-const radius = 240;
+const colors = ["#FF5F6D", "#FFC371", "#48c6ef", "#6f86d6", "#2af598", "#f093fb", "#f5576c"];
+const wheelGroup = document.getElementById('wheel-group');
+const svg = document.getElementById('wheel-svg');
+const btn = document.getElementById('spin-button');
+const display = document.getElementById('winner-display');
+
 const numSlices = prizes.length;
-const sliceAngle = (2 * Math.PI) / numSlices;
+const sliceDeg = 360 / numSlices;
+
+// Build segments with SVG
+prizes.forEach((prize, i) => {{
+    const startAngle = i * sliceDeg;
+    const endAngle = (i + 1) * sliceDeg;
+    const x1 = 250 + 250 * Math.cos(Math.PI * startAngle / 180);
+    const y1 = 250 + 250 * Math.sin(Math.PI * startAngle / 180);
+    const x2 = 250 + 250 * Math.cos(Math.PI * endAngle / 180);
+    const y2 = 250 + 250 * Math.sin(Math.PI * endAngle / 180);
+    
+    const pathData = `M 250 250 L ${{x1}} ${{y1}} A 250 250 0 0 1 ${{x2}} ${{y2}} Z`;
+    
+    // Create segment
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pathData);
+    path.setAttribute("fill", colors[i % colors.length]);
+    path.setAttribute("stroke", "#fff");
+    path.setAttribute("stroke-width", "1");
+    wheelGroup.appendChild(path);
+
+    // Create Text path
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", "380");
+    text.setAttribute("y", "255");
+    text.setAttribute("fill", "white");
+    text.setAttribute("font-weight", "bold");
+    text.setAttribute("font-family", "Arial");
+    text.setAttribute("font-size", "14px");
+    text.setAttribute("transform", `rotate(${{startAngle + sliceDeg/2}}, 250, 250)`);
+    text.textContent = prize;
+    wheelGroup.appendChild(text);
+}});
 
 let currentRotation = 0;
 
-function drawWheel() {{
-    ctx.clearRect(0, 0, 500, 500);
-    for (let i = 0; i < numSlices; i++) {{
-        const angle = i * sliceAngle + currentRotation;
-        
-        // Draw Slice
-        ctx.beginPath();
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, angle, angle + sliceAngle);
-        ctx.lineTo(centerX, centerY);
-        ctx.fill();
-        ctx.strokeStyle = "white";
-        ctx.stroke();
-
-        // Draw Text
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(angle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "white";
-        ctx.font = "bold 16px Arial";
-        ctx.fillText(prizes[i], radius - 20, 10);
-        ctx.restore();
-    }}
-}}
-
-document.getElementById("spin-btn").onclick = function() {{
-    const btn = this;
+btn.addEventListener('click', () => {{
+    if(btn.disabled) return;
     btn.disabled = true;
-    const winnerDisplay = document.getElementById("winner-text");
-    winnerDisplay.innerText = "Spinning...";
+    display.innerText = "SPINNING...";
+    
+    const spins = 1440 + Math.floor(Math.random() * 360);
+    currentRotation += spins;
+    svg.style.transform = `rotate(${{currentRotation}}deg)`;
 
-    const spinSpins = 5 + Math.random() * 5; // 5 to 10 full rotations
-    const totalRotation = spinSpins * 2 * Math.PI;
-    const duration = 5000;
-    const start = performance.now();
-
-    const initialRotation = currentRotation;
-
-    function animate(now) {{
-        const elapsed = now - start;
-        const t = Math.min(elapsed / duration, 1);
+    setTimeout(() => {{
+        btn.disabled = false;
         
-        // Cubic ease-out for smooth stopping
-        const easeOut = 1 - Math.pow(1 - t, 3);
+        // Calculation for 12 o'clock pointer:
+        // Adjust for initial orientation and calculate index
+        const actualDeg = (currentRotation % 360);
+        // We subtract the degree from 270 because 0 degrees in CSS/SVG is 3 o'clock.
+        // The pointer is at 12 o'clock (270 deg).
+        const winningIndex = Math.floor(((270 - actualDeg + 360) % 360) / sliceDeg);
         
-        currentRotation = initialRotation + (totalRotation * easeOut);
-        drawWheel();
-
-        if (t < 1) {{
-            requestAnimationFrame(animate);
-        }} else {{
-            btn.disabled = false;
-            
-            // MATH FOR TOP POINTER:
-            // The pointer is at 1.5 * PI (270 degrees). 
-            // We normalize rotation and find which slice is under the pointer.
-            const normalizedRotation = (currentRotation % (2 * Math.PI));
-            const winningIndex = Math.floor(((1.5 * Math.PI - normalizedRotation + (4 * Math.PI)) % (2 * Math.PI)) / sliceAngle);
-            
-            winnerDisplay.innerText = "WINNER: " + prizes[winningIndex];
-        }}
-    }}
-    requestAnimationFrame(animate);
-}};
-
-drawWheel();
+        display.innerText = "⭐ WINNER: " + prizes[winningIndex] + " ⭐";
+    }}, 5000);
+}});
 </script>
 """
 
-components.html(wheel_html, height=700)
+components.html(wheel_html, height=750)
