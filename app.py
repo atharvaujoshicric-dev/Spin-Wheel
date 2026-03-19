@@ -2,15 +2,16 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-# Prize data with ultra-premium color palette
+# Prize data with ultra-premium color palette - 8 segments
 prizes = [
     {"label": "AIRPODS APPLE", "img": "🎧", "color": "#0a0a0a", "accent": "#C9A84C", "text": "#C9A84C"},
     {"label": "BETTER LUCK",   "img": "🍀", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
     {"label": "SPIN AGAIN",    "img": "🔄", "color": "#101010", "accent": "#C9A84C", "text": "#C9A84C"},
     {"label": "IPAD APPLE",    "img": "📱", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
     {"label": "REFRIGERATOR",  "img": "🧊", "color": "#0a0a0a", "accent": "#C9A84C", "text": "#C9A84C"},
-    {"label": "AIR CONDITIONER","img": "❄️","color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
-    {"label": "BETTER LUCK",   "img": "✨", "color": "#101010", "accent": "#C9A84C", "text": "#C9A84C"},
+    {"label": "BETTER LUCK",   "img": "✨", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
+    {"label": "SPIN AGAIN",    "img": "🔄", "color": "#101010", "accent": "#C9A84C", "text": "#C9A84C"},
+    {"label": "SPLIT AC",      "img": "❄️", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
 ]
 
 st.set_page_config(page_title="SKULUXE — Wheel of Fortune", layout="centered")
@@ -176,7 +177,7 @@ const W = 480, CX = 240, CY = 240, R = 238;
 const N = prizes.length;
 const sliceAngle = (2 * Math.PI) / N;
 
-// Premium segment colors — alternating deep palettes
+// Premium segment colors — alternating deep palettes (8 segments)
 const segColors = [
     {{ bg: '#0D0D0D', rim: '#C9A84C' }},
     {{ bg: '#161610', rim: '#6B6B6B' }},
@@ -185,6 +186,7 @@ const segColors = [
     {{ bg: '#0D0D0D', rim: '#C9A84C' }},
     {{ bg: '#161610', rim: '#6B6B6B' }},
     {{ bg: '#0D0D0D', rim: '#C9A84C' }},
+    {{ bg: '#161610', rim: '#6B6B6B' }},
 ];
 
 let rotation = 0;
