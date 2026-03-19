@@ -24,7 +24,7 @@ st.markdown("""
     header {visibility: hidden;}
     .stApp {background: #000000;}
 
-    .skyluxe-header {
+    .-header {
         text-align: center;
         padding: 36px 0 8px 0;
         letter-spacing: 0.22em;
@@ -57,7 +57,7 @@ st.markdown("""
     </style>
 
     <div class="skyluxe-header">
-        <div class="skyluxe-title">skyLUXE</div>
+        <div class="skyluxe-title">SKYLUXE</div>
         <div class="skyluxe-sub">Wheel of Fortune</div>
         <div class="skyluxe-divider"></div>
     </div>
