@@ -4,10 +4,10 @@ import json
 
 # Prize data with ultra-premium color palette - 8 segments
 prizes = [
-    {"label": "AIRPODS APPLE", "img": "🎧", "color": "#0a0a0a", "accent": "#C9A84C", "text": "#C9A84C"},
+    {"label": "APPLE AIRPODS", "img": "🎧", "color": "#0a0a0a", "accent": "#C9A84C", "text": "#C9A84C"},
     {"label": "BETTER LUCK",   "img": "🍀", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
     {"label": "SPIN AGAIN",    "img": "🔄", "color": "#101010", "accent": "#C9A84C", "text": "#C9A84C"},
-    {"label": "IPAD APPLE",    "img": "📱", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
+    {"label": "APPLE IPAD",    "img": "📱", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
     {"label": "REFRIGERATOR",  "img": "🧊", "color": "#0a0a0a", "accent": "#C9A84C", "text": "#C9A84C"},
     {"label": "BETTER LUCK",   "img": "✨", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
     {"label": "SPIN AGAIN",    "img": "🔄", "color": "#101010", "accent": "#C9A84C", "text": "#C9A84C"},
