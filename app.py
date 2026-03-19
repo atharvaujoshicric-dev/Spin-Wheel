@@ -1,153 +1,145 @@
 import streamlit as st
-import random
-import time
-from datetime import datetime, timedelta
-from streamlit_confetti import confetti
+import streamlit.components.v1 as components
+import json
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Skyluxe Exclusive", page_icon="🏢", layout="centered")
+# Prize data with high-end Jewel Tone colors
+prizes = [
+    {"label": "AIRPODS APPLE", "img": "🎧", "color": "#2E3192", "text": "#ffffff"}, # Royal Blue
+    {"label": "BETTER LUCK", "img": "🍀", "color": "#1B1464", "text": "#ffffff"},   # Deep Navy
+    {"label": "SPIN AGAIN", "img": "🔄", "color": "#00A99D", "text": "#ffffff"},   # Teal
+    {"label": "IPAD APPLE", "img": "📱", "color": "#2E3192", "text": "#ffffff"}, 
+    {"label": "REFRIGERATOR", "img": "🧊", "color": "#1B1464", "text": "#ffffff"},
+    {"label": "AIR CONDITIONER", "img": "❄️", "color": "#00A99D", "text": "#ffffff"},
+    {"label": "BETTER LUCK", "img": "✨", "color": "#2E3192", "text": "#ffffff"}
+]
 
-# --- CUSTOM LUXURY CSS ---
+st.set_page_config(page_title="Premium Rewards", layout="centered")
+
 st.markdown("""
     <style>
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
-                    url('https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=1920&q=80');
-        background-size: cover;
-        background-attachment: fixed;
-    }
-    
-    .timer-box {
-        background: rgba(212, 175, 55, 0.1);
-        border: 1px solid #D4AF37;
-        padding: 10px;
-        border-radius: 8px;
-        text-align: center;
-        color: #D4AF37;
-        font-weight: bold;
-        font-size: 18px;
-        margin-bottom: 20px;
-    }
-
-    .wheel-container { display: flex; justify-content: center; margin: 20px 0; }
-    
-    .wheel {
-        width: 200px; height: 200px; border: 5px solid #D4AF37; border-radius: 50%;
-        background: conic-gradient(
-            #1a1d23 0deg 45deg, #D4AF37 45deg 90deg, 
-            #1a1d23 90deg 135deg, #D4AF37 135deg 180deg, 
-            #1a1d23 180deg 225deg, #D4AF37 225deg 270deg, 
-            #1a1d23 270deg 315deg, #D4AF37 315deg 360deg
-        );
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-    }
-
-    .spinning { animation: spin 1s cubic-bezier(0.15, 0, 0.15, 1) infinite; }
-    @keyframes spin { 100% { transform: rotate(3600deg); } }
-
-    .stButton>button {
-        background-color: #D4AF37 !important; 
-        color: black !important; 
-        font-weight: bold !important;
-        border-radius: 4px !important;
-    }
-    
-    .prize-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-left: 5px solid #D4AF37;
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 0 10px 10px 0;
-    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stApp {background-color: #050505;}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- SESSION STATE ---
-if 'spins_left' not in st.session_state:
-    st.session_state.spins_left = 2
-if 'winner_name' not in st.session_state:
-    st.session_state.winner_name = ""
-if 'is_spinning' not in st.session_state:
-    st.session_state.is_spinning = False
-if 'final_prize' not in st.session_state:
-    st.session_state.final_prize = None
-if 'expiry_time' not in st.session_state:
-    st.session_state.expiry_time = None
-
-# --- HEADER ---
-st.markdown("<h1 style='text-align:center; color:#D4AF37; margin-bottom:0;'>SKYLUXE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#aaa;'>RESIDENCES & REWARDS</p>", unsafe_allow_html=True)
-
-# 1. Lead Generation Phase
-if not st.session_state.winner_name:
-    with st.container():
-        st.markdown("### UNLOCK YOUR EXCLUSIVE OFFERS")
-        name = st.text_input("Full Name")
-        phone = st.text_input("Phone Number")
-        agree = st.checkbox("I agree to the Terms and Conditions of Skyluxe Projects.")
-        
-        if st.button("REGISTER TO SPIN"):
-            if name and phone and agree:
-                st.session_state.winner_name = name
-                st.session_state.expiry_time = datetime.now() + timedelta(minutes=10)
-                st.rerun()
-            elif not agree:
-                st.warning("Please accept the Terms and Conditions.")
-            else:
-                st.error("Details required.")
-
-else:
-    # 2. Timer & Game Phase
-    remaining = st.session_state.expiry_time - datetime.now()
+wheel_html = f"""
+<div id="app-container" style="background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); padding: 40px; border-radius: 30px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); font-family: 'Segoe UI', sans-serif;">
     
-    if remaining.total_seconds() <= 0:
-        st.error("⌛ This exclusive session has expired.")
-    else:
-        # Timer Display
-        mins, secs = divmod(int(remaining.total_seconds()), 60)
-        st.markdown(f'<div class="timer-box">TIME REMAINING: {mins:02d}:{secs:02d}</div>', unsafe_allow_html=True)
+    <div id="pointer" style="
+        position: relative; z-index: 100;
+        width: 0; height: 0; 
+        border-left: 20px solid transparent; 
+        border-right: 20px solid transparent; 
+        border-top: 40px solid #FF3131; 
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+        margin-bottom: -20px;
+    "></div>
 
-        st.write(f"Welcome, *{st.session_state.winner_name}* | Remaining Spins: *{st.session_state.spins_left}*")
-        
-        # Wheel UI
-        wheel_class = "spinning" if st.session_state.is_spinning else ""
-        st.markdown(f'<div class="wheel-container"><div class="wheel {wheel_class}"></div></div>', unsafe_allow_html=True)
+    <div style="padding: 15px; background: linear-gradient(145deg, #CFB53B, #8A7500); border-radius: 50%; box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
+        <div id="wheel-wrapper" style="width: 500px; height: 500px; position: relative; border-radius: 50%; overflow: hidden;">
+            <svg id="wheel-svg" viewBox="0 0 500 500" style="width: 100%; height: 100%; transition: transform 7s cubic-bezier(0.15, 0, 0.15, 1); will-change: transform;">
+                <g id="wheel-group"></g>
+            </svg>
+        </div>
+    </div>
 
-        if st.session_state.spins_left > 0 and not st.session_state.is_spinning:
-            if st.button("🎰 SPIN NOW"):
-                st.session_state.is_spinning = True
-                st.rerun()
+    <button id="spin-btn" style="
+        margin-top: 40px; padding: 18px 70px; font-size: 22px; font-weight: 900;
+        text-transform: uppercase; letter-spacing: 2px;
+        background: linear-gradient(to right, #CFB53B, #F9E274);
+        border: none; border-radius: 50px; cursor: pointer;
+        color: #000; box-shadow: 0 10px 25px rgba(207,181,59,0.3);
+        transition: all 0.3s ease;
+    ">Spin to Win</button>
 
-        # Logic for selection
-        if st.session_state.is_spinning:
-            time.sleep(1.8)
-            prizes = [
-                "Airpods", "Apple iPad", "Split Air Conditioner", 
-                "Double Door Refrigerator", "Spin Again", 
-                "Better Luck Next Time", "Better Luck Next Time", "Better Luck Next Time"
-            ]
-            result = random.choice(prizes)
-            
-            if result == "Spin Again":
-                st.session_state.final_prize = "🔄 SPIN AGAIN! (Chance Preserved)"
-            else:
-                st.session_state.spins_left -= 1
-                st.session_state.final_prize = result
-            
-            st.session_state.is_spinning = False
-            st.rerun()
+    <h1 id="status" style="color: #CFB53B; margin-top: 30px; letter-spacing: 1px; min-height: 60px; text-align: center;"></h1>
+</div>
 
-        # Results Display
-        if st.session_state.final_prize:
-            st.markdown(f'<div class="prize-card"><h3>RESULT: {st.session_state.final_prize}</h3></div>', unsafe_allow_html=True)
-            
-            if "Better Luck" not in st.session_state.final_prize and "Spin Again" not in st.session_state.final_prize:
-                # Fixed: Removed the 'delay' argument
-                confetti(emojis=['🏢', '✨', '🏆'])
-                st.balloons()
+<script>
+const prizes = {json.dumps(prizes)};
+const wheelGroup = document.getElementById('wheel-group');
+const svg = document.getElementById('wheel-svg');
+const btn = document.getElementById('spin-btn');
+const status = document.getElementById('status');
 
-    if st.session_state.spins_left == 0 and not st.session_state.is_spinning:
-        st.info("Please visit the Skyluxe Experience Center to claim your reward.")
-        if st.button("New Registration"):
-            for key in st.session_state.keys(): del st.session_state[key]
-            st.rerun()
+const numSlices = prizes.length;
+const sliceDeg = 360 / numSlices;
+
+// Use SVG for better text wrapping and resolution
+prizes.forEach((p, i) => {{
+    const startAngle = i * sliceDeg;
+    const endAngle = (i + 1) * sliceDeg;
+    
+    // Draw Slice Path
+    const x1 = 250 + 250 * Math.cos(Math.PI * startAngle / 180);
+    const y1 = 250 + 250 * Math.sin(Math.PI * startAngle / 180);
+    const x2 = 250 + 250 * Math.cos(Math.PI * endAngle / 180);
+    const y2 = 250 + 250 * Math.sin(Math.PI * endAngle / 180);
+    
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M 250 250 L ${{x1}} ${{y1}} A 250 250 0 0 1 ${{x2}} ${{y2}} Z`);
+    path.setAttribute("fill", p.color);
+    path.setAttribute("stroke", "rgba(255,255,255,0.1)");
+    wheelGroup.appendChild(path);
+
+    // Add Wrapped Text and Icon
+    const textGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    textGroup.setAttribute("transform", `rotate(${{startAngle + sliceDeg/2}}, 250, 250)`);
+    
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", "400");
+    text.setAttribute("y", "255");
+    text.setAttribute("fill", p.text);
+    text.setAttribute("font-size", "14px");
+    text.setAttribute("font-weight", "bold");
+    text.setAttribute("text-anchor", "end");
+    text.style.fontFamily = "Arial";
+    
+    // Split text into two lines if long
+    const words = p.label.split(' ');
+    if(words.length > 1) {{
+        text.innerHTML = `<tspan x="380" dy="-8">${{words[0]}}</tspan><tspan x="380" dy="18">${{words.slice(1).join(' ')}}</tspan>`;
+    }} else {{
+        text.textContent = p.label;
+    }}
+    
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    icon.setAttribute("x", "460");
+    icon.setAttribute("y", "260");
+    icon.setAttribute("font-size", "28px");
+    icon.setAttribute("text-anchor", "middle");
+    icon.textContent = p.img;
+
+    textGroup.appendChild(text);
+    textGroup.appendChild(icon);
+    wheelGroup.appendChild(textGroup);
+}});
+
+let rotation = 0;
+
+btn.onclick = () => {{
+    if(btn.disabled) return;
+    btn.disabled = true;
+    status.innerText = "⭐ REVEALING FORTUNE... ⭐";
+    
+    const spins = 10 + Math.floor(Math.random() * 5);
+    const extraDegrees = Math.floor(Math.random() * 360);
+    rotation += (spins * 360) + extraDegrees;
+    
+    // Trigger CSS hardware accelerated animation
+    svg.style.transform = `rotate(${{rotation}}deg)`;
+
+    setTimeout(() => {{
+        btn.disabled = false;
+        const actualDeg = rotation % 360;
+        // Logic for 12 o'clock position (270 degrees)
+        const winningIndex = Math.floor(((270 - actualDeg + 360) % 360) / sliceDeg);
+        status.innerHTML = "🏆 WINNER: " + prizes[winningIndex].label + " 🏆";
+    }}, 7100);
+}};
+</script>
+"""
+
+components.html(wheel_html, height=850)
