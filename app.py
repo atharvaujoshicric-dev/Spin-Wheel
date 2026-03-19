@@ -14,7 +14,7 @@ prizes = [
     {"label": "SPLIT AC",      "img": "❄️", "color": "#1C1C1E", "accent": "#8E8E93", "text": "#E5E5EA"},
 ]
 
-st.set_page_config(page_title="SKULUXE — Wheel of Fortune", layout="centered")
+st.set_page_config(page_title="SKYLUXE — Wheel of Fortune", layout="centered")
 
 st.markdown("""
     <style>
@@ -57,7 +57,7 @@ st.markdown("""
     </style>
 
     <div class="skuluxe-header">
-        <div class="skuluxe-title">SKULUXE</div>
+        <div class="skuluxe-title">SKYLUXE</div>
         <div class="skuluxe-sub">Wheel of Fortune</div>
         <div class="skuluxe-divider"></div>
     </div>
