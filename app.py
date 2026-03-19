@@ -2,71 +2,41 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-# Prize data from your design document
+# Prize data with Emoji/Icon placeholders based on your design
 prizes = [
-    "AIRPODS APPLE",            # [cite: 1]
-    "BETTER LUCK NEXT TIME",    # [cite: 2, 3]
-    "SPIN AGAIN",               # [cite: 4, 5]
-    "IPAD APPLE",               # [cite: 6]
-    "DOUBLE DOOR REFRIGERATOR", # [cite: 7, 8, 10]
-    "SPLIT AIR CONDITIONER",    # [cite: 9, 10]
-    "BETTER LUCK NEXT TIME"     # [cite: 11, 12]
+    {"label": "AIRPODS APPLE", "icon": "🎧", "color": "#FF5F6D"},
+    {"label": "BETTER LUCK", "icon": "❌", "color": "#FFC371"},
+    {"label": "SPIN AGAIN", "icon": "🔄", "color": "#48c6ef"},
+    {"label": "IPAD APPLE", "icon": "📱", "color": "#6f86d6"},
+    {"label": "REFRIGERATOR", "icon": "❄️", "color": "#2af598"},
+    {"label": "AIR CONDITIONER", "icon": "💨", "color": "#f093fb"},
+    {"label": "BETTER LUCK", "icon": "❌", "color": "#f5576c"}
 ]
 
-st.set_page_config(page_title="Premium Spin Wheel", layout="centered")
+st.set_page_config(page_title="Executive Spin Wheel", layout="centered")
 
-# Visual layout and CSS
-st.markdown("""
-    <style>
-    .main { background-color: #0e1117; }
-    .stTitle { color: white; text-align: center; font-family: 'Inter', sans-serif; }
-    </style>
-""", unsafe_allow_html=True)
+# Injecting clean UI style
+st.markdown("<h1 style='text-align: center; color: #1E1E1E;'>🎡 Corporate Prize Wheel</h1>", unsafe_allow_html=True)
 
-st.title("🎡 Executive Prize Draw")
-
-# Premium Wheel HTML/JS
+# The updated HTML/JS with SVG Icons and Text Alignment
 wheel_html = f"""
-<div id="wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
-    <div id="pointer" style="
-        width: 0; height: 0; 
-        border-left: 20px solid transparent; 
-        border-right: 20px solid transparent; 
-        border-top: 30px solid #FF3E3E; 
-        z-index: 100; margin-bottom: -15px;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-    "></div>
+<div id="wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <div id="pointer" style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #D32F2F; z-index: 100; margin-bottom: -15px;"></div>
 
     <div id="wheel-container" style="position: relative; width: 500px; height: 500px;">
-        <svg id="wheel-svg" viewBox="0 0 500 500" style="width: 100%; height: 100%; transform: rotate(0deg); transition: transform 5s cubic-bezier(0.1, 0, 0, 1); shadow: 0 10px 40px rgba(0,0,0,0.5);">
-            <defs>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
-                    <feOffset dx="2" dy="2" />
-                    <feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
-                    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-            </defs>
+        <svg id="wheel-svg" viewBox="0 0 500 500" style="width: 100%; height: 100%; transform: rotate(0deg); transition: transform 6s cubic-bezier(0.1, 0, 0, 1);">
             <g id="wheel-group"></g>
         </svg>
-        <circle cx="250" cy="250" r="25" fill="#222" stroke="#444" stroke-width="2" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" />
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: white; border-radius: 50%; border: 4px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px;">🎁</div>
     </div>
 
-    <button id="spin-button" style="
-        margin-top: 40px; padding: 15px 50px; 
-        font-size: 22px; font-weight: 800; letter-spacing: 1px;
-        background: linear-gradient(135deg, #6e8efb, #a777e3); 
-        color: white; border: none; border-radius: 50px; 
-        cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        transition: 0.2s;
-    ">SPIN NOW</button>
+    <button id="spin-button" style="margin-top: 40px; padding: 18px 60px; font-size: 22px; font-weight: bold; background: #1E1E1E; color: white; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s;">SPIN FOR PRIZE</button>
     
-    <h2 id="winner-display" style="color: #00ffcc; font-family: sans-serif; margin-top: 20px; height: 30px; text-transform: uppercase;"></h2>
+    <h2 id="winner-display" style="margin-top: 20px; font-family: sans-serif; color: #D32F2F; height: 40px;"></h2>
 </div>
 
 <script>
 const prizes = {json.dumps(prizes)};
-const colors = ["#FF5F6D", "#FFC371", "#48c6ef", "#6f86d6", "#2af598", "#f093fb", "#f5576c"];
 const wheelGroup = document.getElementById('wheel-group');
 const svg = document.getElementById('wheel-svg');
 const btn = document.getElementById('spin-button');
@@ -75,7 +45,6 @@ const display = document.getElementById('winner-display');
 const numSlices = prizes.length;
 const sliceDeg = 360 / numSlices;
 
-// Build segments with SVG
 prizes.forEach((prize, i) => {{
     const startAngle = i * sliceDeg;
     const endAngle = (i + 1) * sliceDeg;
@@ -86,25 +55,38 @@ prizes.forEach((prize, i) => {{
     
     const pathData = `M 250 250 L ${{x1}} ${{y1}} A 250 250 0 0 1 ${{x2}} ${{y2}} Z`;
     
-    // Create segment
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", pathData);
-    path.setAttribute("fill", colors[i % colors.length]);
-    path.setAttribute("stroke", "#fff");
-    path.setAttribute("stroke-width", "1");
+    path.setAttribute("fill", prize.color);
+    path.setAttribute("stroke", "white");
+    path.setAttribute("stroke-width", "2");
     wheelGroup.appendChild(path);
 
-    // Create Text path
+    // Create container for text and icons to ensure center alignment
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("transform", `rotate(${{startAngle + sliceDeg/2}}, 250, 250)`);
+    
+    // Prize Text
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", "380");
+    text.setAttribute("x", "340"); 
     text.setAttribute("y", "255");
     text.setAttribute("fill", "white");
     text.setAttribute("font-weight", "bold");
-    text.setAttribute("font-family", "Arial");
     text.setAttribute("font-size", "14px");
-    text.setAttribute("transform", `rotate(${{startAngle + sliceDeg/2}}, 250, 250)`);
-    text.textContent = prize;
-    wheelGroup.appendChild(text);
+    text.setAttribute("text-anchor", "middle");
+    text.textContent = prize.label;
+    g.appendChild(text);
+
+    // Prize Icon (Placed further out)
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    icon.setAttribute("x", "440");
+    icon.setAttribute("y", "258");
+    icon.setAttribute("font-size", "30px");
+    icon.setAttribute("text-anchor", "middle");
+    icon.textContent = prize.icon;
+    g.appendChild(icon);
+
+    wheelGroup.appendChild(g);
 }});
 
 let currentRotation = 0;
@@ -112,24 +94,18 @@ let currentRotation = 0;
 btn.addEventListener('click', () => {{
     if(btn.disabled) return;
     btn.disabled = true;
-    display.innerText = "SPINNING...";
+    display.innerText = "Processing...";
     
-    const spins = 1440 + Math.floor(Math.random() * 360);
+    const spins = 1800 + Math.floor(Math.random() * 360);
     currentRotation += spins;
     svg.style.transform = `rotate(${{currentRotation}}deg)`;
 
     setTimeout(() => {{
         btn.disabled = false;
-        
-        // Calculation for 12 o'clock pointer:
-        // Adjust for initial orientation and calculate index
         const actualDeg = (currentRotation % 360);
-        // We subtract the degree from 270 because 0 degrees in CSS/SVG is 3 o'clock.
-        // The pointer is at 12 o'clock (270 deg).
         const winningIndex = Math.floor(((270 - actualDeg + 360) % 360) / sliceDeg);
-        
-        display.innerText = "⭐ WINNER: " + prizes[winningIndex] + " ⭐";
-    }}, 5000);
+        display.innerText = "🎉 WINNER: " + prizes[winningIndex].label + " 🎉";
+    }}, 6100);
 }});
 </script>
 """
