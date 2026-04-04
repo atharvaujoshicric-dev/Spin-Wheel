@@ -1,6 +1,10 @@
 import streamlit as st
-import streamlit.components.v1 as components
+import random
+import time
+import base64
 import json
+from datetime import datetime
+import streamlit.components.v1 as components
 
 # Prize data with ultra-premium color palette - 8 segments
 prizes = [
@@ -16,43 +20,48 @@ prizes = [
 
 st.set_page_config(page_title="SKYLUXE — Wheel of Fortune", layout="centered")
 
+# --- PREMIUM LUXURY CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap');
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stApp {background: #000000;}
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap');
 
-    .skuluxe-header {
-        text-align: center;
-        padding: 36px 0 8px 0;
-        letter-spacing: 0.22em;
+    :root {
+        --gold: #C9A84C;
+        --gold-light: #E8C97A;
+        --gold-dim: rgba(201,168,76,0.1);
+        --gold-border: rgba(201,168,76,0.3);
+        --dark: #0B0C0F;
     }
-    .skuluxe-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 52px;
-        font-weight: 900;
-        color: #C9A84C;
-        line-height: 1;
-        text-shadow: 0 0 40px rgba(201,168,76,0.3);
-        margin: 0;
+
+    html, body, .stApp {
+        background-color: var(--dark) !important;
+        font-family: 'Raleway', sans-serif;
+        overflow: hidden;
     }
-    .skuluxe-sub {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 18px;
-        font-weight: 300;
-        font-style: italic;
-        color: #8E8E93;
-        letter-spacing: 0.35em;
-        margin-top: 6px;
-        text-transform: uppercase;
+
+    .stApp {
+        background-image: radial-gradient(circle at 50% -20%, rgba(201,168,76,0.12) 0%, transparent 80%) !important;
     }
-    .skuluxe-divider {
-        width: 120px;
-        height: 1px;
-        background: linear-gradient(to right, transparent, #C9A84C, transparent);
-        margin: 14px auto 0 auto;
+
+    .block-container {
+        padding-top: 0.2rem !important;
+        padding-bottom: 0.2rem !important;
+        max-width: 450px !important;
+    }
+
+    #MainMenu, footer, header {visibility: hidden;}
+    
+    .stButton > button {
+        background: linear-gradient(135deg, #C9A84C, #8B6914) !important;
+        color: var(--dark) !important;
+        font-family: 'Cinzel', serif !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.1em !important;
+        font-size: 0.7rem !important;
+        border: none !important;
+        border-radius: 2px !important;
+        padding: 8px 15px !important;
+        text-transform: uppercase !important;
     }
     </style>
 
@@ -63,282 +72,137 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-wheel_html = f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap');
+# ---- UTILS ----
+def get_image_base64(path):
+    try:
+        with open(path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode()
+    except:
+        return ""
 
-* {{ box-sizing: border-box; margin: 0; padding: 0; }}
+wheel_base64 = get_image_base64("wheel.png")
 
-#app-container {{
-    background: radial-gradient(ellipse at 50% 0%, #1a1208 0%, #000000 65%);
-    padding: 40px 20px 50px;
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border: 1px solid #2a2007;
-}}
+# ---- SESSION STATE ----
+if 'winner_name' not in st.session_state:
+    st.session_state.winner_name = ""
 
-#pointer-wrap {{
-    position: relative;
-    z-index: 10;
-    margin-bottom: -18px;
-    filter: drop-shadow(0 6px 18px rgba(201,168,76,0.5));
-}}
-#pointer-wrap svg {{ display: block; }}
+# =====================
+# 1. LEAD GENERATION
+# =====================
+if not st.session_state.winner_name:
+    st.markdown("""
+    <div style="text-align: center; padding: 30px 0 10px;">
+        <h1 style="font-family: 'Cinzel'; color: #E8C97A; letter-spacing: 0.3em; margin: 0; font-size: 2.2rem;">SKYLUXE</h1>
+        <p style="font-size: 0.6rem; color: rgba(255,255,255,0.4); letter-spacing: 0.4em; margin: 5px 0 0; text-transform: uppercase;">Residences · Rewards · Legacy</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div style="text-align:center; color:#C9A84C; font-family:Cinzel; font-size:0.85rem; letter-spacing:0.1em; margin:20px 0;">UNLOCK EXCLUSIVE OFFER</div>', unsafe_allow_html=True)
+    
+    name = st.text_input("Full Name", placeholder="Your Name")
+    phone = st.text_input("Phone Number", placeholder="Your Phone")
+    agree = st.checkbox("I agree to terms")
 
-#wheel-ring {{
-    padding: 12px;
-    background: conic-gradient(#C9A84C 0deg, #8a6520 90deg, #C9A84C 180deg, #8a6520 270deg, #C9A84C 360deg);
-    border-radius: 50%;
-    box-shadow:
-        0 0 0 2px #3a2800,
-        0 10px 50px rgba(0,0,0,0.9),
-        0 0 60px rgba(201,168,76,0.08);
-    will-change: transform;
-}}
+    if st.button("REGISTER & SPIN"):
+        if name and phone and agree:
+            st.session_state.winner_name = name
+            st.rerun()
+        else:
+            st.error("Please fill all fields.")
 
-canvas {{
-    border-radius: 50%;
-    display: block;
-    will-change: transform;
-}}
+# =====================
+# 2. GAME PHASE
+# =====================
+else:
+    # Top Bar with Logout
+    col_welcome, col_logout = st.columns([3, 1])
+    with col_welcome:
+        st.markdown(f"""
+        <div style="color: rgba(255,255,255,0.5); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding-top: 10px;">
+            WELCOME: <span style="color: #E8C97A; font-weight: bold;">{st.session_state.winner_name.upper()}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_logout:
+        if st.button("LOGOUT", key="logout_top"):
+            st.session_state.winner_name = ""
+            st.rerun()
 
-#spin-btn {{
-    margin-top: 44px;
-    padding: 16px 64px;
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    background: linear-gradient(135deg, #C9A84C 0%, #f0d880 50%, #C9A84C 100%);
-    border: none;
-    border-radius: 60px;
-    cursor: pointer;
-    color: #000;
-    box-shadow: 0 8px 30px rgba(201,168,76,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}}
-#spin-btn:hover:not(:disabled) {{
-    transform: translateY(-2px);
-    box-shadow: 0 14px 40px rgba(201,168,76,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
-}}
-#spin-btn:disabled {{
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}}
+    st.markdown("""
+    <div style="text-align: center; margin: 5px 0 15px;">
+        <h1 style="font-family: 'Cinzel'; color: #E8C97A; letter-spacing: 0.2em; margin: 0; font-size: 1.6rem;">SKYLUXE</h1>
+    </div>
+    """, unsafe_allow_html=True)
 
-#status {{
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: #C9A84C;
-    letter-spacing: 0.08em;
-    margin-top: 32px;
-    min-height: 40px;
-    text-align: center;
-    text-shadow: 0 0 30px rgba(201,168,76,0.4);
-    transition: opacity 0.3s ease;
-}}
-</style>
+    # ACCURATE ORDER FROM TOP (0 DEGREES) CLOCKWISE
+    prizes = [
+        {"label": "APPLE IPAD", "icon": "📱"},              # 0 deg (Top)
+        {"label": "BETTER LUCK NEXT TIME", "icon": "❌"},  # 45 deg
+        {"label": "SPIN AGAIN", "icon": "🔄"},             # 90 deg
+        {"label": "DOUBLE DOOR REFRIGERATOR", "icon": "❄️"}, # 135 deg
+        {"label": "SPLIT AIR CONDITIONER", "icon": "💨"},   # 180 deg (Bottom)
+        {"label": "BETTER LUCK NEXT TIME", "icon": "❌"},  # 225 deg
+        {"label": "APPLE AIRPODS", "icon": "🎧"},          # 270 deg (Left)
+        {"label": "SPIN AGAIN", "icon": "🔄"}              # 315 deg
+    ]
+    
+    wheel_html = f"""
+    <div id="wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div id="pointer" style="width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 22px solid #C9A84C; z-index: 100; margin-bottom: -12px; filter: drop-shadow(0 0 5px rgba(201,168,76,0.5));"></div>
 
-<div id="app-container">
-    <div id="pointer-wrap">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="22,44 4,4 40,4" fill="#C9A84C"/>
-            <polygon points="22,44 4,4 40,4" fill="url(#pg)" opacity="0.6"/>
-            <defs>
-                <linearGradient id="pg" x1="4" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stop-color="#fff" stop-opacity="0.5"/>
-                    <stop offset="1" stop-color="#000" stop-opacity="0"/>
-                </linearGradient>
-            </defs>
-        </svg>
+        <div id="wheel-container" style="position: relative; width: 280px; height: 280px; border-radius: 50%; border: 4px solid #C9A84C; box-shadow: 0 0 30px rgba(201,168,76,0.15); background: #000; overflow: hidden;">
+            <img id="wheel-img" src="data:image/png;base64,{wheel_base64}" style="width: 100%; height: 100%; transition: transform 6s cubic-bezier(0.1, 0, 0, 1); transform: rotate(0deg); border-radius: 50%;">
+        </div>
+
+        <button id="spin-button" style="margin-top: 20px; padding: 10px 40px; font-size: 0.9rem; font-weight: bold; background: linear-gradient(135deg, #C9A84C, #8B6914); color: #0B0C0F; border: none; border-radius: 2px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: 'Cinzel', serif; box-shadow: 0 5px 15px rgba(0,0,0,0.4);">SPIN TO WIN</button>
+
+        <h2 id="winner-display" style="margin-top: 15px; color: #E8C97A; font-family: 'Cinzel', serif; text-align: center; font-size: 1.1rem; min-height: 30px; letter-spacing: 1px; text-shadow: 0 0 8px rgba(232, 201, 122, 0.3);"></h2>
     </div>
 
-    <div id="wheel-ring">
-        <canvas id="wheel" width="480" height="480"></canvas>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+    const prizes = {json.dumps(prizes)};
+    const img = document.getElementById('wheel-img');
+    const btn = document.getElementById('spin-button');
+    const display = document.getElementById('winner-display');
+    let currentRotation = 0;
 
-    <button id="spin-btn">Spin to Win</button>
-    <div id="status"></div>
-</div>
+    btn.addEventListener('click', () => {{
+        if(btn.disabled) return;
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+        display.innerText = "WAITING FOR LUCK...";
+        
+        const extraDegrees = Math.floor(Math.random() * 360);
+        currentRotation += 1800 + extraDegrees;
+        img.style.transform = `rotate(${{currentRotation}}deg)`;
 
-<script>
-const prizes = {json.dumps(prizes)};
-const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
-const btn = document.getElementById('spin-btn');
-const status = document.getElementById('status');
-
-const W = 480, CX = 240, CY = 240, R = 238;
-const N = prizes.length;
-const sliceAngle = (2 * Math.PI) / N;
-
-// Premium segment colors — alternating deep palettes (8 segments)
-const segColors = [
-    {{ bg: '#0D0D0D', rim: '#C9A84C' }},
-    {{ bg: '#161610', rim: '#6B6B6B' }},
-    {{ bg: '#0D0D0D', rim: '#C9A84C' }},
-    {{ bg: '#161610', rim: '#6B6B6B' }},
-    {{ bg: '#0D0D0D', rim: '#C9A84C' }},
-    {{ bg: '#161610', rim: '#6B6B6B' }},
-    {{ bg: '#0D0D0D', rim: '#C9A84C' }},
-    {{ bg: '#161610', rim: '#6B6B6B' }},
-];
-
-let rotation = 0;
-let animId = null;
-
-function drawWheel(rot) {{
-    ctx.clearRect(0, 0, W, W);
-
-    for (let i = 0; i < N; i++) {{
-        const startA = i * sliceAngle + rot;
-        const endA = startA + sliceAngle;
-        const mid = startA + sliceAngle / 2;
-        const sc = segColors[i % segColors.length];
-        const p = prizes[i];
-
-        // Segment fill
-        const grad = ctx.createRadialGradient(CX, CY, 20, CX, CY, R);
-        grad.addColorStop(0, lighten(sc.bg, 0.12));
-        grad.addColorStop(1, sc.bg);
-
-        ctx.beginPath();
-        ctx.moveTo(CX, CY);
-        ctx.arc(CX, CY, R, startA, endA);
-        ctx.closePath();
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // Rim line
-        ctx.beginPath();
-        ctx.moveTo(CX, CY);
-        ctx.arc(CX, CY, R, startA, endA);
-        ctx.closePath();
-        ctx.strokeStyle = sc.rim;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Label
-        ctx.save();
-        ctx.translate(CX, CY);
-        ctx.rotate(mid);
-        ctx.textAlign = 'right';
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-
-        ctx.font = 'bold 15px "Arial Narrow", Arial, sans-serif';
-        ctx.letterSpacing = '1px';
-        ctx.fillStyle = p.text;
-        ctx.fillText(p.label, R - 52, 5);
-
-        ctx.font = '22px Arial';
-        ctx.shadowBlur = 0;
-        ctx.fillText(p.img, R - 16, 8);
-        ctx.restore();
-    }}
-
-    // Radial dividers (subtle luxury lines from center)
-    for (let i = 0; i < N; i++) {{
-        const a = i * sliceAngle + rot;
-        ctx.beginPath();
-        ctx.moveTo(CX + Math.cos(a) * 34, CY + Math.sin(a) * 34);
-        ctx.lineTo(CX + Math.cos(a) * R, CY + Math.sin(a) * R);
-        ctx.strokeStyle = 'rgba(201,168,76,0.25)';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-    }}
-
-    // Center jewel
-    const cg = ctx.createRadialGradient(CX - 5, CY - 5, 2, CX, CY, 28);
-    cg.addColorStop(0, '#f0d880');
-    cg.addColorStop(0.5, '#C9A84C');
-    cg.addColorStop(1, '#5c3d00');
-
-    ctx.beginPath();
-    ctx.arc(CX, CY, 28, 0, 2 * Math.PI);
-    ctx.fillStyle = cg;
-    ctx.fill();
-    ctx.strokeStyle = '#2a1800';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Inner ring on jewel
-    ctx.beginPath();
-    ctx.arc(CX, CY, 20, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-}}
-
-function lighten(hex, amt) {{
-    const n = parseInt(hex.slice(1), 16);
-    const r = Math.min(255, (n >> 16) + Math.round(amt * 255));
-    const g = Math.min(255, ((n >> 8) & 0xff) + Math.round(amt * 255));
-    const b = Math.min(255, (n & 0xff) + Math.round(amt * 255));
-    return `rgb(${{r}},${{g}},${{b}})`;
-}}
-
-// Smooth easing — no lag, uses requestAnimationFrame properly
-function easeOutQuart(t) {{
-    return 1 - Math.pow(1 - t, 4);
-}}
-
-btn.addEventListener('click', () => {{
-    if (btn.disabled) return;
-    btn.disabled = true;
-    status.textContent = '';
-
-    // 1. Pre-pick the winner
-    const winnerIdx = Math.floor(Math.random() * N);
-
-    // 2. The pointer sits at the TOP of the canvas = -π/2 in canvas coords.
-    //    Segment i occupies [i*sliceAngle, (i+1)*sliceAngle] + rotation.
-    //    We want the midpoint of segment winnerIdx to sit at -π/2.
-    //    So we need:  winnerIdx*sliceAngle + sliceAngle/2 + targetRot = -π/2  (mod 2π)
-    //    => targetRot = -π/2 - winnerIdx*sliceAngle - sliceAngle/2
-    const targetRot = -Math.PI / 2 - (winnerIdx * sliceAngle + sliceAngle / 2);
-
-    // 3. Bring targetRot to same mod-2π neighbourhood as current rotation,
-    //    then add at least 6 full extra spins so it always looks dramatic.
-    const currentMod = rotation % (2 * Math.PI);
-    let targetMod = ((targetRot % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    // How far to spin from current mod position to target mod (always forward)
-    let delta = targetMod - currentMod;
-    if (delta <= 0) delta += 2 * Math.PI;          // always spin forward
-    const extraSpins = (6 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
-    const totalSpin = extraSpins + delta;
-
-    const duration = 6500;
-    const startRot = rotation;
-    let startTime = null;
-
-    function frame(ts) {{
-        if (!startTime) startTime = ts;
-        const elapsed = ts - startTime;
-        const t = Math.min(elapsed / duration, 1);
-        rotation = startRot + totalSpin * easeOutQuart(t);
-        drawWheel(rotation);
-
-        if (t < 1) {{
-            animId = requestAnimationFrame(frame);
-        }} else {{
+        setTimeout(() => {{
             btn.disabled = false;
-            // Winner was pre-determined — display directly, no recalculation
-            status.textContent = '🏆 ' + prizes[winnerIdx].label;
-        }}
-    }}
+            btn.style.opacity = "1";
+            
+            const netRotation = (currentRotation % 360);
+            const numSlices = 8;
+            const sliceDeg = 360 / numSlices;
+            const winningIndex = Math.floor(((360 - netRotation + (sliceDeg / 2)) % 360) / sliceDeg);
+            const winner = prizes[winningIndex];
+            
+            display.innerText = "🎉 " + winner.label + " 🎉";
+            
+            // Logic: Hide button if not "SPIN AGAIN"
+            if (winner.label !== "SPIN AGAIN") {{
+                btn.style.display = 'none';
+                display.innerHTML += '<div style="font-size: 0.7rem; color: #8E8E93; margin-top: 5px; font-family: Raleway;">SCREENSHOT TO CLAIM YOUR PRIZE</div>';
+            }} else {{
+                display.innerText = "🔄 SPIN AGAIN! 🔄";
+            }}
+            
+            if (!winner.label.includes("BETTER LUCK") && winner.label !== "SPIN AGAIN") {{
+                confetti({{ particleCount: 150, spread: 70, origin: {{ y: 0.6 }}, colors: ['#C9A84C', '#E8C97A', '#FFFFFF'] }});
+            }}
+        }}, 6100);
+    }});
+    </script>
+    """
+    components.html(wheel_html, height=450)
 
-    if (animId) cancelAnimationFrame(animId);
-    animId = requestAnimationFrame(frame);
-}});
-
-drawWheel(rotation);
-</script>
-"""
-
-components.html(wheel_html, height=900)
+st.markdown('<div style="text-align:center; font-size:0.5rem; color:rgba(255,255,255,0.3); margin-top:5px; letter-spacing: 1px;">SKYLUXE RESIDENCES</div>', unsafe_allow_html=True)
